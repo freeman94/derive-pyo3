@@ -126,7 +126,7 @@ use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use syn::{Token, punctuated::Punctuated};
 
-#[proc_macro_derive(new, attributes(new))]
+#[proc_macro_derive(PythonType, attributes(PythonTypeNew))]
 pub fn derive(input: TokenStream) -> TokenStream {
     let ast: syn::DeriveInput = syn::parse(input).expect("Couldn't parse item");
     let result = match ast.data {
@@ -206,11 +206,16 @@ fn new_impl(
     let lint_attrs = collect_parent_lint_attrs(&ast.attrs);
     let lint_attrs = my_quote![#(#lint_attrs),*];
     my_quote! {
+        #[pymethods]
         impl #impl_generics #name #ty_generics #where_clause {
             #[doc = #doc]
             #lint_attrs
+            #[new]
             pub fn #new(#(#args),*) -> Self {
                 #name #qual #inits
+            }
+            pub fn to_json(&self) -> Result<String> {
+                Ok(serde_json::to_string(&self)?)
             }
         }
     }
